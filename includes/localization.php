@@ -27,4 +27,6 @@ function pmpro_translate_billing_period($period, $number = 1)
 		return _n("Month", "Months", $number, "pmpro");
 	elseif($period == "Year")
 		return _n("Year", "Years", $number, "pmpro");	
+	else
+		return _n($period, $period . "s", $number, "pmpro");
 }

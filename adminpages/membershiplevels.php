@@ -350,7 +350,7 @@
 						<input id="cycle_number" name="cycle_number" type="text" size="10" value="<?php echo str_replace("\"", "&quot;", stripslashes($level->cycle_number))?>" />
 						<select id="cycle_period" name="cycle_period">
 						  <?php
-							$cycles = array( __('Day(s)', 'pmpro') => 'Day', __('Week(s)', 'pmpro') => 'Week', __('Month(s)', 'pmpro') => 'Month', __('Year(s)', 'pmpro') => 'Year' );
+							$cycles = apply_filters("pmpro_payment_cycles", array( __('Day(s)', 'pmpro') => 'Day', __('Week(s)', 'pmpro') => 'Week', __('Month(s)', 'pmpro') => 'Month', __('Year(s)', 'pmpro') => 'Year' ));
 							foreach ( $cycles as $name => $value ) {
 							  echo "<option value='$value'";
 							  if ( $level->cycle_period == $value ) echo " selected='selected'";
