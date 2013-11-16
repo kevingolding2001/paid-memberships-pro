@@ -1602,7 +1602,7 @@ function pmpro_is_ready()
 		}
 		else
 		{
-			$pmpro_gateway_ready = false;
+			$pmpro_gateway_ready = apply_filters("pmpro_gateway_ready", false);
 		}
 	}
 

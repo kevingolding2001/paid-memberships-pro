@@ -166,6 +166,7 @@
 						<option value="braintree" <?php selected( $gateway, "braintree" ); ?>>Braintree Payments</option>
 						<option value="twocheckout" <?php selected( $gateway, "twocheckout" ); ?>>Twocheckout</option>
 						<option value="cybersource" <?php selected( $gateway, "cybersource" ); ?>>CyberSource</option>
+						<option value="custom" <?php selected( $gateway, "custom" ); ?>>Custom</option>
 					</select>                        
 				</td>
 			</tr>

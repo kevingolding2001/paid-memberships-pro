@@ -108,14 +108,28 @@
 			}
 			
 			//which one to load?
-			$classname = "PMProGateway";	//default test gateway
-			if(!empty($this->gateway) && $this->gateway != "free")
-				$classname .= "_" . $this->gateway;	//adding the gateway suffix
+			if(!empty($this->gateway) && $this->gateway != "free") {
+				$gw_classname = "PMProGateway";	//default test gateway
+				$gw_classpath = "gateways";		//default path to gateway class files
+				$gw_classfile = "class." . strtolower($classname) . ".php";
+
+				if ($this->gateway == "custom") {
+					$gw_classpath = apply_filters("pmpro_gateway_classpath", $gw_classpath);
+					$gw_classname = apply_filters("pmpro_gateway_classname", $gw_classname);
+					$gw_classfile = apply_filters("pmpro_gateway_classfile", $gw_classname . ".php");
+				} else {
+					$gw_classname .= "_" . $this->gateway;	//adding the gateway suffix
+					$gw_classfile = "class." . strtolower($gw_classname) . ".php";
+				}
+			}
+
 							
 			//try to load it
-			include_once(dirname(__FILE__) . "/gateways/class." . strtolower($classname) . ".php");
-			if(class_exists($classname))
-				$this->Gateway = new $classname($this->gateway);
+			include_once(dirname(__FILE__) . "/" . $gw_classpath . "/" . strtolower($gw_classfile));
+
+			if(class_exists($gw_classname))
+				$this->Gateway = new $gw_classname($this->gateway);
+
 			else
 			{
 				$error = new WP_Error("PMPro1001", "Could not locate the gateway class file with class name = " . $classname . ".");
