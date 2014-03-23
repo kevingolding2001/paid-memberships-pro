@@ -135,7 +135,7 @@
 			return $this->Gateway;
 		}
 		
-		function getLastMemberOrder($user_id = NULL, $status = 'success')
+		function getLastMemberOrder($user_id = NULL, $status = 'success', $membership_id = NULL)
 		{
 			global $current_user, $wpdb;
 			if(!$user_id)
@@ -150,6 +150,9 @@
 				$this->sqlQuery .= "AND status IN('" . implode("','", $status) . "') ";
 			elseif(!empty($status))
 				$this->sqlQuery .= "AND status = '" . esc_sql($status) . "' ";
+			
+			if(!empty($membership_id))
+				$this->sqlQuery .= "AND membership_id = '" . $membership_id . "' ";
 			$this->sqlQuery .= "ORDER BY timestamp DESC LIMIT 1";
 						
 			//get id
@@ -158,6 +161,9 @@
 			return $this->getMemberOrderByID($id);
 		}
 		
+		/*
+			Returns the order using the given order code.
+		*/
 		function getMemberOrderByCode($code)
 		{
 			global $wpdb;
@@ -168,8 +174,15 @@
 				return false;
 		}
 		
+		/*
+			Returns the last order using the given payment_transaction_id.
+		*/
 		function getMemberOrderByPaymentTransactionID($payment_transaction_id)
 		{
+			//did they pass a trans id?
+			if(empty($payment_transaction_id))
+				return false;
+			
 			global $wpdb;
 			$id = $wpdb->get_var("SELECT id FROM $wpdb->pmpro_membership_orders WHERE payment_transaction_id = '" . esc_sql($payment_transaction_id) . "' LIMIT 1");
 			if($id)
@@ -367,7 +380,7 @@
 				$this->billing->name = $this->billing->street = $this->billing->city = $this->billing->state = $this->billing->zip = $this->billing->country = $this->billing->phone = "";
 			}
 			if(empty($this->user_id))
-				$this->user_id = "";
+				$this->user_id = 0;
 			if(empty($this->paypal_token))
 				$this->paypal_token = "";
 			if(empty($this->couponamount))
@@ -383,7 +396,15 @@
 			if(empty($this->affiliate_subid))
 				$this->affiliate_subid = "";	
 			if(empty($this->session_id))
-				$this->session_id = "";		
+				$this->session_id = "";
+			if(empty($this->accountnumber))
+				$this->accountnumber = "";
+			if(empty($this->cardtype))
+				$this->cardtype = "";
+			if(empty($this->ExpirationDate))
+				$this->ExpirationDate = "";
+			if (empty($this->status))
+				$this->status = "";    
 			
 			if(empty($this->gateway))
 				$this->gateway = pmpro_getOption("gateway");				
@@ -403,8 +424,8 @@
 				$this->sqlQuery = "UPDATE $wpdb->pmpro_membership_orders
 									SET `code` = '" . $this->code . "',
 									`session_id` = '" . $this->session_id . "',
-									`user_id` = '" . $this->user_id . "',
-									`membership_id` = '" . $this->membership_id . "',
+									`user_id` = " . intval($this->user_id) . ",
+									`membership_id` = " . intval($this->membership_id) . ",
 									`paypal_token` = '" . $this->paypal_token . "',
 									`billing_name` = '" . esc_sql($this->billing->name) . "',
 									`billing_street` = '" . esc_sql($this->billing->street) . "',
@@ -416,7 +437,7 @@
 									`subtotal` = '" . $this->subtotal . "',
 									`tax` = '" . $this->tax . "',
 									`couponamount` = '" . $this->couponamount . "',
-									`certificate_id` = '" . $this->certificate_id . "',
+									`certificate_id` = " . intval($this->certificate_id) . ",
 									`certificateamount` = '" . $this->certificateamount . "',
 									`total` = '" . $this->total . "',
 									`payment_type` = '" . $this->payment_type . "',
@@ -445,8 +466,8 @@
 								(`code`, `session_id`, `user_id`, `membership_id`, `paypal_token`, `billing_name`, `billing_street`, `billing_city`, `billing_state`, `billing_zip`, `billing_country`, `billing_phone`, `subtotal`, `tax`, `couponamount`, `certificate_id`, `certificateamount`, `total`, `payment_type`, `cardtype`, `accountnumber`, `expirationmonth`, `expirationyear`, `status`, `gateway`, `gateway_environment`, `payment_transaction_id`, `subscription_transaction_id`, `timestamp`, `affiliate_id`, `affiliate_subid`, `notes`) 
 								VALUES('" . $this->code . "',
 									   '" . session_id() . "',
-									   '" . $this->user_id . "',
-									   '" . $this->membership_id . "',
+									   " . intval($this->user_id) . ",
+									   " . intval($this->membership_id) . ",
 									   '" . $this->paypal_token . "',
 									   '" . esc_sql(trim($this->billing->name)) . "',
 									   '" . esc_sql(trim($this->billing->street)) . "',
@@ -458,7 +479,7 @@
 									   '" . $amount . "',
 									   '" . $tax . "',
 									   '" . $this->couponamount. "',
-									   '" . intval($this->certificate_id) . "',
+									   " . intval($this->certificate_id) . ",
 									   '" . $this->certificateamount . "',
 									   '" . $total . "',
 									   '" . $this->payment_type . "',
@@ -530,7 +551,7 @@
 		}
 		
 		function cancel()
-		{
+		{			
 			//only need to cancel on the gateway if there is a subscription id
 			if(empty($this->subscription_transaction_id))
 			{
@@ -539,9 +560,28 @@
 				return true;
 			}
 			else
-			{			
+			{				
 				//cancel the gateway subscription first				
-				return $this->Gateway->cancel($this);					
+				$result = $this->Gateway->cancel($this);
+				if($result == false)
+				{
+					//there was an error, but cancel the order no matter what					
+					$this->updateStatus("cancelled");
+										
+					//we should probably notify the admin															
+					$pmproemail = new PMProEmail();
+					$pmproemail->template = "subscription_cancel_error";
+					$pmproemail->data = array("body"=>"<p>" . sprintf(__("There was an error canceling the subscription for user with ID=%s. You will want to check your payment gateway to see if their subscription is still active.", "pmpro"), strval($this->user_id)) . "</p><p>Error: " . $this->error . "</p>");					
+					$pmproemail->data["body"] .= "<p>Associated Order:<br />" . nl2br(var_export($this, true)) . "</p>";
+					$pmproemail->sendEmail(get_bloginfo("admin_email"));
+					
+					return false;
+				}
+				else
+				{				
+					//would have been cancelled by the gateway class
+					return $result;
+				}
 			}
 		}
 		

@@ -4,20 +4,49 @@
 */
 function pmpro_wp_mail_from_name($from_name)
 {
-	$pmpro_from_name = pmpro_getOption("from_name");
-	if ($pmpro_from_name)
-		return $pmpro_from_name;
+	$default_from_name = 'WordPress';
+	
+	//make sure it's the default from name
+	if($from_name == $default_from_name)
+	{	
+		$pmpro_from_name = pmpro_getOption("from_name");
+		if ($pmpro_from_name)
+			$from_name = $pmpro_from_name;
+	}
+	
 	return $from_name;
 }
 function pmpro_wp_mail_from($from_email)
 {
-	$pmpro_from_email = pmpro_getOption("from_email");
-	if ($pmpro_from_email && is_email( $pmpro_from_email ) )
-		return $pmpro_from_email;
+	// default from email wordpress@sitename
+	$sitename = strtolower( $_SERVER['SERVER_NAME'] );
+	if ( substr( $sitename, 0, 4 ) == 'www.' ) {
+		$sitename = substr( $sitename, 4 );
+	}
+	$default_from_email = 'wordpress@' . $sitename;
+		
+	//make sure it's the default email address
+	if($from_email == $default_from_email)
+	{	
+		$pmpro_from_email = pmpro_getOption("from_email");
+		if ($pmpro_from_email && is_email( $pmpro_from_email ) )
+			$from_email = $pmpro_from_email;
+	}
+	
 	return $from_email;
 }
-add_filter('wp_mail_from_name', 'pmpro_wp_mail_from_name');
-add_filter('wp_mail_from', 'pmpro_wp_mail_from');
+
+$only_filter_pmpro_emails = pmpro_getOption("only_filter_pmpro_emails");
+if($only_filter_pmpro_emails)
+{
+	add_filter('pmpro_email_sender_name', 'pmpro_wp_mail_from_name');
+	add_filter('pmpro_email_sender', 'pmpro_wp_mail_from');
+}
+else
+{
+	add_filter('wp_mail_from_name', 'pmpro_wp_mail_from_name');
+	add_filter('wp_mail_from', 'pmpro_wp_mail_from');
+}
 
 /*
 	If the $email_member_notification option is empty, disable the wp_new_user_notification email at checkout.
@@ -30,12 +59,13 @@ if(empty($email_member_notification))
 	Adds template files and changes content type to html if using PHPMailer directly.
 */
 function pmpro_send_html( $phpmailer ) {
+		
 	// Set the original plain text message
 	$phpmailer->AltBody = wp_specialchars_decode($phpmailer->Body, ENT_QUOTES);
 	// Clean < and > around text links in WP 3.1
 	$phpmailer->Body = preg_replace('#<(http://[^*]+)>#', '$1', $phpmailer->Body);
 	// Convert line breaks & make links clickable
-	$phpmailer->Body = wpautop ( make_clickable ($phpmailer->Body) );
+	$phpmailer->Body = make_clickable ($phpmailer->Body);
 
 	// Add template to message
 	if(file_exists(TEMPLATEPATH . "/email_header.html"))

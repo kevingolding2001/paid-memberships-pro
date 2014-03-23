@@ -40,11 +40,11 @@ function pmpro_checkLevelForStripeCompatibility($level = NULL)
 					/*
 						Stripe currently does not support:
 						* Trial Amounts > 0.
-						* Daily or Weekly billing periods.						
+						* Daily billing periods.						
 						* Billing Limits.										
 					*/
 					if($level->trial_amount > 0 ||
-					   ($level->cycle_number > 0 && ($level->cycle_period == "Day" || $level->cycle_period == "Week")) ||
+					   ($level->cycle_number > 0 && $level->cycle_period == "Day") ||
 					   $level->billing_limit > 0)
 					{
 						return false;
@@ -60,7 +60,7 @@ function pmpro_checkLevelForStripeCompatibility($level = NULL)
 			
 			//check this level
 			if($level->trial_amount > 0 ||
-			   ($level->cycle_number > 0 && ($level->cycle_period == "Day" || $level->cycle_period == "Week")) ||
+			   ($level->cycle_number > 0 && $level->cycle_period == "Day") ||
 			   $level->billing_limit > 0)
 			{
 				return false;
@@ -194,10 +194,10 @@ function pmpro_checkLevelForTwoCheckoutCompatibility($level = NULL)
 				foreach($levels as $level)
 				{
 					/*
-						Twocheckout currently does not support:
+						2Checkout currently does not support:
 						* Trial amounts less than or greater than the absolute value of amonthly recurring amount.										
 					*/
-					if($level->billing_amount > 0 && abs($level->trial_amount) >= $level->billing_amount )
+					if(pmpro_isLevelTrial($level))
 					{
 						return false;
 					}
@@ -211,7 +211,7 @@ function pmpro_checkLevelForTwoCheckoutCompatibility($level = NULL)
 				$level = $wpdb->get_row("SELECT * FROM $wpdb->pmpro_membership_levels WHERE id = '" . esc_sql($level) . "' LIMIT 1");
 			
 			//check this level
-			if($level->billing_amount > 0 && abs($level->trial_amount) >= $level->billing_amount )
+			if(pmpro_isLevelTrial($level))
 			{
 				return false;
 			}

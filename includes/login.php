@@ -66,7 +66,7 @@ function pmpro_login_head()
 		//redirect registration page to levels page
 		if( isset($_REQUEST['action']) && $_REQUEST['action'] == "register" || 
 			isset($_REQUEST['registration']) && $_REQUEST['registration'] == "disabled"	||
-			class_exists("Theme_My_Login") && defined('Theme_My_Login::version') && version_compare(Theme_My_Login::version, "6.3") >= 0 && Theme_My_Login::is_tml_page("register")	
+			!is_admin() && class_exists("Theme_My_Login") && defined('Theme_My_Login::version') && version_compare(Theme_My_Login::version, "6.3") >= 0 && Theme_My_Login::is_tml_page("register")	
 		)
 		{
 			//redirect to levels page unless filter is set.
@@ -86,7 +86,7 @@ function pmpro_login_head()
 			//check for the login page id and redirect there if we're not there already
 			global $post;
 						
-			if(is_array($GLOBALS['theme_my_login']->options))
+			if(!empty($GLOBALS['theme_my_login']) && is_array($GLOBALS['theme_my_login']->options))
 			{
 				//an older version of TML stores it this way
 				if($GLOBALS['theme_my_login']->options['page_id'] !== $post->ID)

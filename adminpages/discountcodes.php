@@ -189,7 +189,7 @@
 					if($wpdb->query($sqlQuery) !== false)
 					{
 						//okay												
-						do_action("pmpro_save_discount_code_level", $saveid, $level_id);						
+						do_action("pmpro_save_discount_code_level", $edit, $level_id);						
 					}
 					else
 					{					
@@ -221,6 +221,9 @@
 		$code = $wpdb->get_var("SELECT code FROM $wpdb->pmpro_discount_codes WHERE id = '" . $delete . "' LIMIT 1");
 		if(!empty($code))
 		{
+			//action
+			do_action("pmpro_delete_discount_code", $delete);
+			
 			//delete the code levels
 			$r1 = $wpdb->query("DELETE FROM $wpdb->pmpro_discount_codes_levels WHERE code_id = '" . $delete . "'");
 			
@@ -434,13 +437,13 @@
 							</tr>
 							
 							<tr class="recurring_info" <?php if(!pmpro_isLevelRecurring($level)) {?>style="display: none;"<?php } ?>>
-								<th scope="row" valign="top"><label for="billing_amount"><?php _e('Billing Ammount', 'pmpro');?>:</label></th>
+								<th scope="row" valign="top"><label for="billing_amount"><?php _e('Billing Amount', 'pmpro');?>:</label></th>
 								<td>
 									<?php echo $pmpro_currency_symbol?><input name="billing_amount[]" type="text" size="20" value="<?php echo str_replace("\"", "&quot;", stripslashes($level->billing_amount))?>" /> <small>per</small>
 									<input name="cycle_number[]" type="text" size="10" value="<?php echo str_replace("\"", "&quot;", stripslashes($level->cycle_number))?>" />
 									<select name="cycle_period[]" onchange="updateCyclePeriod();">
 									  <?php
-										$cycles = array( 'Day(s)' => 'Day', 'Week(s)' => 'Week', 'Month(s)' => 'Month', 'Year(s)' => 'Year' );
+										$cycles = array( __('Day(s)', 'pmpro') => 'Day', __('Week(s)', 'pmpro') => 'Week', __('Month(s)', 'pmpro') => 'Month', __('Year(s)', 'pmpro') => 'Year' );
 										foreach ( $cycles as $name => $value ) {
 										  echo "<option value='$value'";
 										  if ( $level->cycle_period == $value ) echo " selected='selected'";
@@ -477,7 +480,7 @@
 							
 							<tr>
 								<th scope="row" valign="top"><label><?php _e('Membership Expiration', 'pmpro');?>:</label></th>
-								<td><input id="expiration" name="expiration[]" type="checkbox" value="<?php echo $level->id?>" <?php if(pmpro_isLevelExpiring($level)) { echo "checked='checked'"; } ?> onclick="if(jQuery(this).is(':checked')) { jQuery(this).parent().parent().siblings('.expiration_info').show(); } else { jQuery(this).parent().parent().siblings('.expiration_info').hide();}" /> <small><?php _e('Check this to set an expiration date for new sign ups.', 'pmpro');?></small></td>
+								<td><input id="expiration" name="expiration[]" type="checkbox" value="<?php echo $level->id?>" <?php if(pmpro_isLevelExpiring($level)) { echo "checked='checked'"; } ?> onclick="if(jQuery(this).is(':checked')) { jQuery(this).parent().parent().siblings('.expiration_info').show(); } else { jQuery(this).parent().parent().siblings('.expiration_info').hide();}" /> <?php _e('Check this to set when membership access expires.', 'pmpro');?></td>
 							</tr>
 							
 							<tr class="expiration_info" <?php if(!pmpro_isLevelExpiring($level)) {?>style="display: none;"<?php } ?>>
@@ -486,7 +489,7 @@
 									<input id="expiration_number" name="expiration_number[]" type="text" size="10" value="<?php echo str_replace("\"", "&quot;", stripslashes($level->expiration_number))?>" />
 									<select id="expiration_period" name="expiration_period[]">
 									  <?php
-										$cycles = array( 'Day(s)' => 'Day', 'Week(s)' => 'Week', 'Month(s)' => 'Month', 'Year(s)' => 'Year' );
+										$cycles = array( __('Day(s)', 'pmpro') => 'Day', __('Week(s)', 'pmpro') => 'Week', __('Month(s)', 'pmpro') => 'Month', __('Year(s)', 'pmpro') => 'Year' );
 										foreach ( $cycles as $name => $value ) {
 										  echo "<option value='$value'";
 										  if ( $level->expiration_period == $value ) echo " selected='selected'";
@@ -494,7 +497,7 @@
 										}
 									  ?>
 									</select>
-									<br /><small><?php _e('How long before the expiration expires. Note that any future payments will be cancelled when the membership expires.', 'pmpro');?></small>							
+									<br /><small><?php _e('Set the duration of membership access. Note that the any future payments (recurring subscription, if any) will be cancelled when the membership expires.', 'pmpro');?></small>							
 								</td>
 							</tr> 
 						</tbody>
@@ -513,8 +516,8 @@
 			</div>
 			
 			<p class="submit topborder">
-				<input name="save" type="submit" class="button-primary" value="Save Code" /> 					
-				<input name="cancel" type="button" value="Cancel" onclick="location.href='<?php echo get_admin_url(NULL, '/admin.php?page=pmpro-discountcodes')?>';" />
+				<input name="save" type="submit" class="button button-primary" value="Save Code" /> 					
+				<input name="cancel" type="button" class="button button-secondary" value="Cancel" onclick="location.href='<?php echo get_admin_url(NULL, '/admin.php?page=pmpro-discountcodes')?>';" />
 			</p>
 			</form>
 		</div>
@@ -523,7 +526,7 @@
 	
 		<h2>
 			<?php _e('Memberships Discount Codes', 'pmpro');?>
-			<a href="admin.php?page=pmpro-discountcodes&edit=-1" class="button add-new-h2"><?php _e('Add New Discount Code', 'pmpro');?></a>
+			<a href="admin.php?page=pmpro-discountcodes&edit=-1" class="add-new-h2"><?php _e('Add New Discount Code', 'pmpro');?></a>
 		</h2>		
 		
 		<?php if(!empty($pmpro_msg)) { ?>
@@ -540,7 +543,14 @@
 		</form>	
 		
 		<br class="clear" />
-		
+		<?php
+			$sqlQuery = "SELECT *, UNIX_TIMESTAMP(starts) as starts, UNIX_TIMESTAMP(expires) as expires FROM $wpdb->pmpro_discount_codes ";
+			if(!empty($s))
+				$sqlQuery .= "WHERE code LIKE '%$s%' ";
+			$sqlQuery .= "ORDER BY id ASC";
+			
+			$codes = $wpdb->get_results($sqlQuery, OBJECT);
+		?>		
 		<table class="widefat">
 		<thead>
 			<tr>
@@ -550,19 +560,13 @@
 				<th><?php _e('Expires', 'pmpro');?></th>        
 				<th><?php _e('Uses', 'pmpro');?></th>
 				<th><?php _e('Levels', 'pmpro');?></th>
+				<?php do_action("pmpro_discountcodes_extra_cols_header", $codes);?>
 				<th></th>		
 				<th></th>						
 			</tr>
 		</thead>
 		<tbody>
 			<?php
-				$sqlQuery = "SELECT *, UNIX_TIMESTAMP(starts) as starts, UNIX_TIMESTAMP(expires) as expires FROM $wpdb->pmpro_discount_codes ";
-				if(!empty($s))
-					$sqlQuery .= "WHERE code LIKE '%$s%' ";
-				$sqlQuery .= "ORDER BY id ASC";
-				
-				$codes = $wpdb->get_results($sqlQuery, OBJECT);
-				
 				if(!$codes)
 				{
 				?>
@@ -610,6 +614,7 @@
 									echo "None";
 							?>
 						</td>
+						<?php do_action("pmpro_discountcodes_extra_cols_body", $code);?>
 						<td>
 							<a href="?page=pmpro-discountcodes&edit=<?php echo $code->id?>"><?php _e('edit', 'pmpro');?></a>																
 						</td>

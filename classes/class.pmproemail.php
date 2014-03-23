@@ -58,7 +58,9 @@
 				$this->body = file_get_contents(PMPRO_DIR . "/languages/" . $locale . "/" . $this->template . ".html");								//email folder in PMPro language folder
 			elseif(file_exists(PMPRO_DIR . "/email/" . $this->template . ".html"))
 				$this->body = file_get_contents(PMPRO_DIR . "/email/" . $this->template . ".html");													//default template in plugin
-						
+			elseif(!empty($this->data) && !empty($this->data['body']))
+				$this->body = $this->data['body'];
+			
 			//header and footer
 			/* This is handled for all emails via the pmpro_send_html function in paid-memberships-pro now
 			if(file_exists(TEMPLATEPATH . "/email_header.html"))
@@ -213,6 +215,14 @@
 				$this->data["accountnumber"] = hideCardNumber($invoice->accountnumber);
 				$this->data["expirationmonth"] = $invoice->expirationmonth;
 				$this->data["expirationyear"] = $invoice->expirationyear;
+				$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																	 $invoice->billing->street,
+																	 "", //address 2
+																	 $invoice->billing->city,
+																	 $invoice->billing->state,
+																	 $invoice->billing->zip,
+																	 $invoice->billing->country,
+																	 $invoice->billing->phone);
 				
 				if($invoice->getDiscountCode())
 					$this->data["discount_code"] = "<p>" . __("Discount Code", "pmpro") . ": " . $invoice->discount_code->code . "</p>\n";
@@ -302,6 +312,14 @@
 				$this->data["accountnumber"] = hideCardNumber($invoice->accountnumber);
 				$this->data["expirationmonth"] = $invoice->expirationmonth;
 				$this->data["expirationyear"] = $invoice->expirationyear;
+				$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																	 $invoice->billing->street,
+																	 "", //address 2
+																	 $invoice->billing->city,
+																	 $invoice->billing->state,
+																	 $invoice->billing->zip,
+																	 $invoice->billing->country,
+																	 $invoice->billing->phone);
 				
 				if($invoice->getDiscountCode())
 					$this->data["discount_code"] = "<p>" . __("Discount Code", "pmpro") . ": " . $invoice->discount_code->code . "</p>\n";
@@ -368,6 +386,14 @@
 								"expirationyear" => $invoice->expirationyear,
 								"login_link" => pmpro_url("account")
 							);
+			$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																 $invoice->billing->street,
+																 "", //address 2
+																 $invoice->billing->city,
+																 $invoice->billing->state,
+																 $invoice->billing->zip,
+																 $invoice->billing->country,
+																 $invoice->billing->phone);
 		
 			return $this->sendEmail();
 		}
@@ -413,6 +439,14 @@
 								"expirationyear" => $invoice->expirationyear,
 								"login_link" => wp_login_url()
 							);
+			$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																 $invoice->billing->street,
+																 "", //address 2
+																 $invoice->billing->city,
+																 $invoice->billing->state,
+																 $invoice->billing->zip,
+																 $invoice->billing->country,
+																 $invoice->billing->phone);
 		
 			return $this->sendEmail();
 		}
@@ -453,6 +487,14 @@
 								"expirationyear" => $invoice->expirationyear,
 								"login_link" => pmpro_url("billing")
 							);
+			$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																 $invoice->billing->street,
+																 "", //address 2
+																 $invoice->billing->city,
+																 $invoice->billing->state,
+																 $invoice->billing->zip,
+																 $invoice->billing->country,
+																 $invoice->billing->phone);
 		
 			return $this->sendEmail();
 		}				
@@ -491,7 +533,14 @@
 								"expirationyear" => $invoice->expirationyear,
 								"login_link" => pmpro_url("billing")
 							);
-		
+			$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																 $invoice->billing->street,
+																 "", //address 2
+																 $invoice->billing->city,
+																 $invoice->billing->state,
+																 $invoice->billing->zip,
+																 $invoice->billing->country,
+																 $invoice->billing->phone);		
 			return $this->sendEmail();
 		}
 		
@@ -531,6 +580,14 @@
 								"expirationyear" => $invoice->expirationyear,
 								"login_link" => pmpro_url("billing")
 							);
+			$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																 $invoice->billing->street,
+																 "", //address 2
+																 $invoice->billing->city,
+																 $invoice->billing->state,
+																 $invoice->billing->zip,
+																 $invoice->billing->country,
+																 $invoice->billing->phone);
 		
 			return $this->sendEmail();
 		}
@@ -558,7 +615,7 @@
 								"membership_level_name" => $user->membership_level->name,
 								"display_name" => $user->display_name,
 								"user_email" => $user->user_email,	
-								"invoice_id" => $invoice->payment_transaction_id,
+								"invoice_id" => $invoice->code,
 								"invoice_total" => $pmpro_currency_symbol . number_format($invoice->total, 2),
 								"invoice_date" => date(get_option('date_format'), $invoice->timestamp),								
 								"billing_name" => $invoice->billing->name,
@@ -575,6 +632,14 @@
 								"login_link" => pmpro_url("account"),
 								"invoice_link" => pmpro_url("invoice", "?invoice=" . $invoice->code)
 							);
+			$this->data["billing_address"] = pmpro_formatAddress($invoice->billing->name,
+																 $invoice->billing->street,
+																 "", //address 2
+																 $invoice->billing->city,
+																 $invoice->billing->state,
+																 $invoice->billing->zip,
+																 $invoice->billing->country,
+																 $invoice->billing->phone);
 		
 			if($invoice->getDiscountCode())
 				$this->data["discount_code"] = "<p>" . __("Discount Code", "pmpro") . ": " . $invoice->discount_code . "</p>\n";
@@ -669,7 +734,7 @@
 			$this->email = $user->user_email;
 			$this->subject = sprintf(__("Your membership at %s will end soon", "pmpro"), get_option("blogname"));
 			$this->template = "membership_expiring";
-			$this->data = array("subject" => $this->subject, "name" => $user->display_name, "user_login" => $user->user_login, "sitename" => get_option("blogname"), "membership_level_name" => $user->membership_level->name, "siteemail" => pmpro_getOption("from_email"), "login_link" => wp_login_url(), "enddate" => date(get_option('date_format'), $user->membership_level->enddate), "display_name" => $user->display_name, "user_email" => $user->user_email);			
+			$this->data = array("subject" => $this->subject, "name" => $user->display_name, "user_login" => $user->user_login, "sitename" => get_option("blogname"), "membership_id" => $user->membership_level->id, "membership_level_name" => $user->membership_level->name, "siteemail" => pmpro_getOption("from_email"), "login_link" => wp_login_url(), "enddate" => date(get_option('date_format'), $user->membership_level->enddate), "display_name" => $user->display_name, "user_email" => $user->user_email);			
 			
 			return $this->sendEmail();
 		}
@@ -689,9 +754,9 @@
 			$this->email = $user->user_email;
 			$this->subject = sprintf(__("Your membership at %s has been changed", "pmpro"), get_option("blogname"));
 			$this->template = "admin_change";
-			$this->data = array("subject" => $this->subject, "name" => $user->display_name, "user_login" => $user->user_login, "sitename" => get_option("blogname"), "membership_level_name" => $user->membership_level->name, "siteemail" => pmpro_getOption("from_email"), "login_link" => wp_login_url());
+			$this->data = array("subject" => $this->subject, "name" => $user->display_name, "user_login" => $user->user_login, "sitename" => get_option("blogname"), "membership_id" => $user->membership_level->id, "membership_level_name" => $user->membership_level->name, "siteemail" => pmpro_getOption("from_email"), "login_link" => wp_login_url());
 			if($user->membership_level->ID)
-				$this->data["membership_change"] = sprintf(__("The new level is %s. This membership is free", "pmpro"), $user->membership_level->name);
+				$this->data["membership_change"] = sprintf(__("The new level is %s.", "pmpro"), $user->membership_level->name);
 			else
 				$this->data["membership_change"] = __("Your membership has been cancelled", "pmpro");
 			

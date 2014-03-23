@@ -157,6 +157,8 @@
 	  
 		if($ml_id > 0)
 		{	  
+			do_action("pmpro_delete_membership_level", $ml_id);
+			
 			//remove any categories from the ml
 			$sqlQuery = "DELETE FROM $wpdb->pmpro_memberships_categories WHERE membership_id = '$ml_id'";	  			
 			$r1 = $wpdb->query($sqlQuery);
@@ -361,7 +363,7 @@
 						<br /><small>							
 							<?php _e('The amount to be billed one cycle after the initial payment.', 'pmpro');?>							
 							<?php if($gateway == "stripe") { ?>
-								<br /><strong <?php if(!empty($pmpro_stripe_error)) { ?>class="pmpro_red"<?php } ?>><?php _e('Stripe integration currently only supports billing periods of "Month" or "Year".', 'pmpro');?>
+								<br /><strong <?php if(!empty($pmpro_stripe_error)) { ?>class="pmpro_red"<?php } ?>><?php _e('Stripe integration currently only supports billing periods of "Week", "Month" or "Year".', 'pmpro');?>
 							<?php } elseif($gateway == "braintree") { ?>
 								<br /><strong <?php if(!empty($pmpro_braintree_error)) { ?>class="pmpro_red"<?php } ?>><?php _e('Braintree integration currently only supports billing periods of "Month" or "Year".', 'pmpro');?>						
 							<?php } elseif($gateway == "payflowpro") { ?>
@@ -391,7 +393,13 @@
 
 				<tr class="recurring_info" <?php if (!pmpro_isLevelRecurring($level)) echo "style='display:none;'";?>>
 					<th scope="row" valign="top"><label><?php _e('Custom Trial', 'pmpro');?>:</label></th>
-					<td><input id="custom_trial" name="custom_trial" type="checkbox" value="yes" <?php if ( pmpro_isLevelTrial($level) ) { echo "checked='checked'"; } ?> onclick="jQuery('.trial_info').toggle();" /> <?php _e('Check to add a custom trial period.', 'pmpro');?></td>
+					<td>
+						<input id="custom_trial" name="custom_trial" type="checkbox" value="yes" <?php if ( pmpro_isLevelTrial($level) ) { echo "checked='checked'"; } ?> onclick="jQuery('.trial_info').toggle();" /> <?php _e('Check to add a custom trial period.', 'pmpro');?>
+												
+						<?php if($gateway == "twocheckout") { ?>
+							<br /><small><strong <?php if(!empty($pmpro_twocheckout_error)) { ?>class="pmpro_red"<?php } ?>><?php _e('2Checkout integration does not support custom trials. You can do one period trials by setting an initial payment different from the billing amount.', 'pmpro');?></strong></small>
+						<?php } ?>
+					</td>
 				</tr>
 
 				<tr class="trial_info recurring_info" <?php if (!pmpro_isLevelTrial($level)) echo "style='display:none;'";?>>
@@ -412,9 +420,7 @@
 						<?php } elseif($gateway == "payflowpro") { ?>
 							<br /><small>
 							<strong <?php if(!empty($pmpro_payflow_error)) { ?>class="pmpro_red"<?php } ?>><?php _e('Payflow integration currently does not support trial amounts greater than $0.', 'pmpro');?></strong>
-							</small>
-						<?php } elseif($gateway == "twocheckout") { ?>
-								<br /><strong <?php if(!empty($pmpro_twocheckout_error)) { ?>class="pmpro_red"<?php } ?>><?php _e('TwoCheckout integration only supports trial amounts less than the absolute Billing Amount (e.g. if Billing Amount is $10, Trial Amount can fall between $10 and -$10 but cannot equal those).', 'pmpro');?>
+							</small>						
 						<?php } ?>
 					</td>
 				</tr>
@@ -440,7 +446,7 @@
 						<input id="expiration_number" name="expiration_number" type="text" size="10" value="<?php echo str_replace("\"", "&quot;", stripslashes($level->expiration_number))?>" />
 						<select id="expiration_period" name="expiration_period">
 						  <?php
-							$cycles = array( 'Day(s)' => 'Day', 'Week(s)' => 'Week', 'Month(s)' => 'Month', 'Year(s)' => 'Year' );
+							$cycles = array( __('Day(s)', 'pmpro') => 'Day', __('Week(s)', 'pmpro') => 'Week', __('Month(s)', 'pmpro') => 'Month', __('Year(s)', 'pmpro') => 'Year' );
 							foreach ( $cycles as $name => $value ) {
 							  echo "<option value='$value'";
 							  if ( $level->expiration_period == $value ) echo " selected='selected'";
@@ -489,7 +495,7 @@
 	{
 	?>							
 				
-	<h2><?php _e('Membership Levels', 'pmpro');?> <a href="admin.php?page=pmpro-membershiplevels&edit=-1" class="button add-new-h2"><?php _e('Add New Level', 'pmpro');?></a></h2>
+	<h2><?php _e('Membership Levels', 'pmpro');?> <a href="admin.php?page=pmpro-membershiplevels&edit=-1" class="add-new-h2"><?php _e('Add New Level', 'pmpro');?></a></h2>
 	<form id="posts-filter" method="get" action="">			
 		<p class="search-box">
 			<label class="screen-reader-text" for="post-search-input"><?php _e('Search Levels', 'pmpro');?>:</label>
@@ -542,7 +548,7 @@
 				<?php if(!pmpro_isLevelRecurring($level)) { ?>
 					--
 				<?php } else { ?>						
-					<?php echo $pmpro_currency_symbol?><?php echo $level->billing_amount?> <?php _e('every', 'pmpro');?> <?php echo $level->cycle_number.' '.sornot($level->cycle_period,$level->cycle_number)?>
+					<?php echo $pmpro_currency_symbol?><?php echo $level->billing_amount?> <?php _e('every', 'pmpro');?> <?php echo $level->cycle_number.' '.pmpro_translate_billing_period($level->cycle_period,$level->cycle_number)?>
 					
 					<?php if($level->billing_limit) { ?>(<?php _e('for', 'pmpro');?> <?php echo $level->billing_limit?> <?php echo sornot($level->cycle_period,$level->billing_limit)?>)<?php } ?>
 					
@@ -563,9 +569,9 @@
 				<?php } ?>
 			</td>
 			<td><?php if($level->allow_signups) { ?><?php _e('Yes', 'pmpro');?><?php } else { ?><?php _e('No', 'pmpro');?><?php } ?></td>
-			<td align="center"><a href="admin.php?page=pmpro-membershiplevels&edit=<?php echo $level->id?>" class="edit"><?php _e('edit', 'pmpro');?></a></td>
-			<td align="center"><a href="admin.php?page=pmpro-membershiplevels&copy=<?php echo $level->id?>&edit=-1" class="edit"><?php _e('copy', 'pmpro');?></a></td>
-			<td align="center"><a href="javascript: askfirst('<?php printf(__("Are you sure you want to delete membership level %s? All subscriptions will be cancelled.", "pmpro"), $level->name);?>','admin.php?page=pmpro-membershiplevels&action=delete_membership_level&deleteid=<?php echo $level->id?>'); void(0);" class="delete"><?php _e('delete', 'pmpro');?></a></td>
+			<td align="center"><a href="admin.php?page=pmpro-membershiplevels&amp;edit=<?php echo $level->id?>" class="edit"><?php _e('edit', 'pmpro');?></a></td>
+			<td align="center"><a href="admin.php?page=pmpro-membershiplevels&amp;copy=<?php echo $level->id?>&amp;edit=-1" class="edit"><?php _e('copy', 'pmpro');?></a></td>
+			<td align="center"><a href="javascript: askfirst('<?php printf(__("Are you sure you want to delete membership level %s? All subscriptions will be cancelled.", "pmpro"), $level->name);?>','admin.php?page=pmpro-membershiplevels&amp;action=delete_membership_level&amp;deleteid=<?php echo $level->id?>'); void(0);" class="delete"><?php _e('delete', 'pmpro');?></a></td>
 		</tr>
 		<?php
 			}

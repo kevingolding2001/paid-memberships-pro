@@ -13,23 +13,51 @@ function pmpro_init()
 
 	if(is_admin())
 	{
-		if(file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/admin.css"))
+		$admin_css_rtl = false;
+		if(file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/admin.css")) {
 			$admin_css = get_stylesheet_directory_uri() . "/paid-memberships-pro/css/admin.css";
-		elseif(file_exists(get_template_directory() . "/paid-memberships-pro/admin.css"))
+			if( is_rtl() && file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/admin-rtl.css") ) {
+				$admin_css_rtl = get_stylesheet_directory_uri() . "/paid-memberships-pro/css/admin-rtl.css";
+			}
+		} elseif(file_exists(get_template_directory() . "/paid-memberships-pro/admin.css")) {
 			$admin_css = get_template_directory_uri() . "/paid-memberships-pro/admin.css";
-		else
-			$admin_css = plugins_url('css/admin.css',dirname(__FILE__) );		
+			if( is_rtl() && file_exists(get_template_directory() . "/paid-memberships-pro/css/admin-rtl.css") ) {
+				$admin_css_rtl = get_template_directory_uri() . "/paid-memberships-pro/css/admin-rtl.css";
+			}
+		} else {
+			$admin_css = plugins_url('css/admin.css',dirname(__FILE__) );
+			if( is_rtl() ) {
+				$admin_css_rtl = plugins_url('css/admin-rtl.css',dirname(__FILE__) );
+			}
+		}
 		wp_enqueue_style('pmpro_admin', $admin_css, array(), PMPRO_VERSION, "screen");
+		if( $admin_css_rtl ) {
+			wp_enqueue_style('pmpro_admin_rtl', $admin_css_rtl, array(), PMPRO_VERSION, "screen");
+		}
 	}
 	else
 	{		
-		if(file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/frontend.css"))
+		$frontend_css_rtl = false;
+		if(file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/frontend.css")) {
 			$frontend_css = get_stylesheet_directory_uri() . "/paid-memberships-pro/css/frontend.css";
-		elseif(file_exists(get_template_directory() . "/paid-memberships-pro/frontend.css"))
+			if( is_rtl() && file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/frontend-rtl.css") ) {
+				$frontend_css_rtl = get_stylesheet_directory_uri() . "/paid-memberships-pro/css/frontend-rtl.css";
+			}
+		} elseif(file_exists(get_template_directory() . "/paid-memberships-pro/frontend.css")) {
 			$frontend_css = get_template_directory_uri() . "/paid-memberships-pro/frontend.css";
-		else
+			if( is_rtl() && file_exists(get_template_directory() . "/paid-memberships-pro/css/frontend-rtl.css") ) {
+				$frontend_css_rtl = get_template_directory_uri() . "/paid-memberships-pro/css/frontend-rtl.css";
+			}
+		} else {
 			$frontend_css = plugins_url('css/frontend.css',dirname(__FILE__) );	
+			if( is_rtl() ) {
+				$frontend_css_rtl = plugins_url('css/frontend-rtl.css',dirname(__FILE__) );
+			}
+		}
 		wp_enqueue_style('pmpro_frontend', $frontend_css, array(), PMPRO_VERSION, "screen");
+		if( $frontend_css_rtl ) {
+			wp_enqueue_style('pmpro_frontend_rtl', $frontend_css_rtl, array(), PMPRO_VERSION, "screen");
+		}
 		
 		if(file_exists(get_stylesheet_directory() . "/paid-memberships-pro/css/print.css"))
 			$print_css = get_stylesheet_directory_uri() . "/paid-memberships-pro/css/print.css";
@@ -80,16 +108,11 @@ function pmpro_wp()
 	if(!is_admin())
 	{
 		global $post, $pmpro_pages, $pmpro_page_name, $pmpro_page_id, $pmpro_body_classes;		
-		
+				
 		//run the appropriate preheader function
 		foreach($pmpro_pages as $pmpro_page_name => $pmpro_page_id)
-		{			
-			if($pmpro_page_name == "checkout")
-			{								
-				continue;		//we do the checkout shortcode every time now
-			}
-				
-			if(!empty($post->ID) && $pmpro_page_id == $post->ID)
+		{						
+			if(!empty($post->post_content) && strpos($post->post_content, "[pmpro_" . $pmpro_page_name . "]") !== false)
 			{
 				//preheader
 				require_once(PMPRO_DIR . "/preheaders/" . $pmpro_page_name . ".php");
@@ -114,14 +137,7 @@ function pmpro_wp()
 				add_shortcode("pmpro_" . $pmpro_page_name, "pmpro_pages_shortcode");
 				break;	//only the first page found gets a shortcode replacement
 			}
-		}
-		
-		//make sure you load the preheader for the checkout page. the shortcode for checkout is loaded below		
-		if(!empty($post->post_content) && strpos($post->post_content, "[pmpro_checkout]") !== false)
-		{
-			$pmpro_body_classes[] = "pmpro-checkout";
-			require_once(PMPRO_DIR . "/preheaders/checkout.php");	
-		}
+		}				
 	}
 }
 add_action("wp", "pmpro_wp", 1);

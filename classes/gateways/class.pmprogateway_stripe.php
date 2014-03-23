@@ -162,7 +162,15 @@
 					//update the customer description and card
 					if(!empty($order->stripeToken))
 					{
-						$this->customer->description = trim($order->FirstName . " " . $order->LastName) . " (" . $order->Email . ")";
+						$name = trim($order->FirstName . " " . $order->LastName);
+
+						if (empty($name))
+						{
+							$name = trim($current_user->first_name . " " . $current_user->last_name);
+						}
+
+						$this->customer->description = $name . " (" . $order->Email . ")";
+						$this->customer->email = $order->Email;
 						$this->customer->card = $order->stripeToken;
 						$this->customer->save();
 					}
@@ -182,6 +190,7 @@
 				{
 					$this->customer = Stripe_Customer::create(array(
 							  "description" => trim($order->FirstName . " " . $order->LastName) . " (" . $order->Email . ")",
+							  "email" => $order->Email,
 							  "card" => $order->stripeToken
 							));
 				}
@@ -192,7 +201,23 @@
 					return false;
 				}
 				
-				update_user_meta($user_id, "pmpro_stripe_customerid", $this->customer->id);	
+				if(!empty($user_id))
+				{
+					//user logged in/etc
+					update_user_meta($user_id, "pmpro_stripe_customerid", $this->customer->id);	
+				}
+				else
+				{
+					//user not registered yet, queue it up
+					global $pmpro_stripe_customer_id;
+					$pmpro_stripe_customer_id = $this->customer->id;
+					function pmpro_user_register_stripe_customerid($user_id)
+					{
+						global $pmpro_stripe_customer_id;
+						update_user_meta($user_id, "pmpro_stripe_customerid", $pmpro_stripe_customer_id);
+					}
+					add_action("user_register", "pmpro_user_register_stripe_customerid");
+				}
 				
 				return $this->customer;
 			}
@@ -322,29 +347,48 @@
 		
 		function cancel(&$order)
 		{
+			//no matter what happens below, we're going to cancel the order in our system
+			$order->updateStatus("cancelled");
+		
 			//require a subscription id
 			if(empty($order->subscription_transaction_id))
 				return false;
 			
 			//find the customer
-			$this->getCustomer($order);
+			$this->getCustomer($order);									
 			
 			if(!empty($this->customer))
 			{
-				//cancel
-				try 
-				{ 
-					$this->customer->cancelSubscription();								
-				}
-				catch(Exception $e)
-				{
-					$order->updateStatus("cancelled");	//assume it's been cancelled already
-					$order->error = __("Could not find the subscription.", "pmpro");
-					$order->shorterror = $order->error;
-					return false;	//no subscription found	
-				}
+				//find subscription with this order code
+				$subscriptions = $this->customer->subscriptions->all();												
 				
-				$order->updateStatus("cancelled");					
+				if(!empty($subscriptions))
+				{
+					//in case only one is returned
+					if(!is_array($subscriptions))
+						$subscriptions = array($subscriptions);
+				
+					foreach($subscriptions as $sub)
+					{						
+						if($sub->data[0]->plan->id == $order->code)
+						{
+							//found it, cancel it
+							try 
+							{								
+								$this->customer->subscriptions->retrieve($sub->data[0]->id)->cancel();
+								break;
+							}
+							catch(Exception $e)
+							{								
+								$order->error = __("Could not cancel old subscription.", "pmpro");
+								$order->shorterror = $order->error;
+																
+								return false;
+							}
+						}
+					}
+				}															
+				
 				return true;
 			}
 			else

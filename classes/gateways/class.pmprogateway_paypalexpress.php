@@ -90,7 +90,10 @@
 			$nvpStr .= "&CANCELURL=" . urlencode(pmpro_url("levels"));									
 			
 			$nvpStr = apply_filters("pmpro_set_express_checkout_nvpstr", $nvpStr, $order);						
-						
+			
+			///echo str_replace("&", "&<br />", $nvpStr);
+			///exit;
+			
 			$this->httpParsedResponseAr = $this->PPHttpPost('SetExpressCheckout', $nvpStr);					
 						
 			if("SUCCESS" == strtoupper($this->httpParsedResponseAr["ACK"]) || "SUCCESSWITHWARNING" == strtoupper($this->httpParsedResponseAr["ACK"])) {
@@ -223,7 +226,7 @@
 			//taxes on the amount
 			$amount = $order->PaymentAmount;
 			$amount_tax = $order->getTaxForPrice($amount);									
-			$amount = round((float)$amount + (float)$amount_tax, 2);
+			//$amount = round((float)$amount + (float)$amount_tax, 2);
 						
 			//paypal profile stuff
 			$nvpStr = "";
@@ -253,7 +256,10 @@
 				$nvpStr .= "&TRIALTOTALBILLINGCYCLES=" . $order->TrialBillingCycles;
 			
 			$this->nvpStr = $nvpStr;						
-						
+			
+			///echo str_replace("&", "&<br />", $nvpStr);
+			///exit;
+			
 			$this->httpParsedResponseAr = $this->PPHttpPost('CreateRecurringPaymentsProfile', $nvpStr);
 						
 			if("SUCCESS" == strtoupper($this->httpParsedResponseAr["ACK"]) || "SUCCESSWITHWARNING" == strtoupper($this->httpParsedResponseAr["ACK"])) {
@@ -279,21 +285,23 @@
 		{			
 			//paypal profile stuff
 			$nvpStr = "";			
-			$nvpStr .= "&PROFILEID=" . $order->subscription_transaction_id . "&ACTION=Cancel&NOTE=User requested cancel.";							
+			$nvpStr .= "&PROFILEID=" . urlencode($order->subscription_transaction_id) . "&ACTION=Cancel&NOTE=" . urlencode("User requested cancel.");						
 			
 			$this->httpParsedResponseAr = $this->PPHttpPost('ManageRecurringPaymentsProfileStatus', $nvpStr);						
-			if("SUCCESS" == strtoupper($this->httpParsedResponseAr["ACK"]) || "SUCCESSWITHWARNING" == strtoupper($this->httpParsedResponseAr["ACK"]) || $this->httpParsedResponseAr['L_ERRORCODE0'] == "11556") {								
+						
+			if("SUCCESS" == strtoupper($this->httpParsedResponseAr["ACK"]) || "SUCCESSWITHWARNING" == strtoupper($this->httpParsedResponseAr["ACK"])) 
+			{								
 				$order->updateStatus("cancelled");					
-				return true;
-				//exit('CreateRecurringPaymentsProfile Completed Successfully: '.print_r($this->httpParsedResponseAr, true));
-			} else  {				
+				return true;				
+			} 
+			else  
+			{
 				$order->status = "error";
 				$order->errorcode = $this->httpParsedResponseAr['L_ERRORCODE0'];
-				$order->error = urldecode($this->httpParsedResponseAr['L_LONGMESSAGE0']);
+				$order->error = urldecode($this->httpParsedResponseAr['L_LONGMESSAGE0']) . ". " . __("Please contact the site owner or cancel your subscription from within PayPal to make sure you are not charged going forward.", "pmpro");
 				$order->shorterror = urldecode($this->httpParsedResponseAr['L_SHORTMESSAGE0']);
 								
-				return false;
-				//exit('CreateRecurringPaymentsProfile failed: ' . print_r($httpParsedResponseAr, true));
+				return false;				
 			}
 		}	
 		

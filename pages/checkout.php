@@ -48,7 +48,7 @@
 				
 				<div id="pmpro_level_cost">
 					<?php if($discount_code && pmpro_checkDiscountCode($discount_code)) { ?>
-						<?php printf(__('<p>The <strong>%s</strong> code has been applied to your order.</p>', 'pmpro'), $discount_code);?>
+						<?php printf(__('<p class="pmpro_level_discount_applied">The <strong>%s</strong> code has been applied to your order.</p>', 'pmpro'), $discount_code);?>
 					<?php } ?>
 					<?php echo wpautop(pmpro_getLevelCost($pmpro_level)); ?>
 					<?php echo wpautop(pmpro_getLevelExpiration($pmpro_level)); ?>
@@ -151,6 +151,10 @@
 	</script>
 	<?php } ?>
 	
+	<?php
+		do_action('pmpro_checkout_after_pricing_fields');
+	?>
+	
 	<?php if(!$skip_account_fields && !$pmpro_review) { ?>
 	<table id="pmpro_user_fields" class="pmpro_checkout" width="100%" cellpadding="0" cellspacing="0" border="0">
 	<thead>
@@ -252,37 +256,18 @@
 	</table>   
 	<?php } elseif($current_user->ID && !$pmpro_review) { ?>                        	                       										
 		
-		<p>
+		<p id="pmpro_account_loggedin">
 			<?php printf(__('You are logged in as <strong>%s</strong>. If you would like to use a different account for this membership, <a href="%s">log out now</a>.', 'pmpro'), $current_user->user_login, wp_logout_url($_SERVER['REQUEST_URI'])); ?>			
 		</p>
 	<?php } ?>
 	
-	<?php					
-		if($tospage && !$pmpro_review)
-		{						
-		?>
-		<table id="pmpro_tos_fields" class="pmpro_checkout top1em" width="100%" cellpadding="0" cellspacing="0" border="0">
-		<thead>
-		<tr>
-			<th><?php echo $tospage->post_title?></th>
-		</tr>
-	</thead>
-		<tbody>
-			<tr class="odd">
-				<td>								
-					<div id="pmpro_license">
-<?php echo wpautop($tospage->post_content)?>
-					</div>								
-					<input type="checkbox" name="tos" value="1" id="tos" /> <label for="tos"><?php printf(__('I agree to the %s', 'pmpro'), $tospage->post_title);?></label>
-				</td>
-			</tr>
-		</tbody>
-		</table>
-		<?php
-		}
+	<?php
+		do_action('pmpro_checkout_after_user_fields');
 	?>
 	
-	<?php do_action("pmpro_checkout_boxes"); ?>	
+	<?php
+		do_action('pmpro_checkout_boxes');
+	?>		
 		
 	<?php if(pmpro_getOption("gateway", true) == "paypal" && empty($pmpro_review)) { ?>
 		<table id="pmpro_payment_method" class="pmpro_checkout top1em" width="100%" cellpadding="0" cellspacing="0" border="0" <?php if(!$pmpro_requirebilling) { ?>style="display: none;"<?php } ?>>
@@ -344,7 +329,7 @@
 					</div>
 					<div>
 						<label for="bstate"><?php _e('State', 'pmpro');?></label>																
-						<input id="bstate" name="bstate" type="text" class="input <?php echo pmpro_getClassForField("bcity");?>" size="30" value="<?php echo esc_attr($bstate)?>" /> 					
+						<input id="bstate" name="bstate" type="text" class="input <?php echo pmpro_getClassForField("bstate");?>" size="30" value="<?php echo esc_attr($bstate)?>" /> 					
 					</div>
 					<div>
 						<label for="bzipcode"><?php _e('Postal Code', 'pmpro');?></label>
@@ -435,8 +420,7 @@
 				?>
 				<div>
 					<label for="bphone"><?php _e('Phone', 'pmpro');?></label>
-					<input id="bphone" name="bphone" type="text" class="input <?php echo pmpro_getClassForField("bphone");?>" size="30" value="<?php echo esc_attr($bphone)?>" /> 
-					<?php echo formatPhone($bphone); ?>
+					<input id="bphone" name="bphone" type="text" class="input <?php echo pmpro_getClassForField("bphone");?>" size="30" value="<?php echo esc_attr(formatPhone($bphone))?>" />					
 				</div>		
 				<?php if($skip_account_fields) { ?>
 				<?php
@@ -517,7 +501,7 @@
 			
 				<div>
 					<label for="AccountNumber"><?php _e('Card Number', 'pmpro');?></label>
-					<input id="AccountNumber" <?php if($gateway != "stripe" && $gateway != "braintree") { ?>name="AccountNumber"<?php } ?> class="input <?php echo pmpro_getClassForField("AccountNumber");?>" type="text" size="25" value="<?php echo esc_attr($AccountNumber)?>" <?php if($gateway == "braintree") { ?>data-encrypted-name="number"<?php } ?> /> 
+					<input id="AccountNumber" <?php if($gateway != "stripe" && $gateway != "braintree") { ?>name="AccountNumber"<?php } ?> class="input <?php echo pmpro_getClassForField("AccountNumber");?>" type="text" size="25" value="<?php echo esc_attr($AccountNumber)?>" <?php if($gateway == "braintree") { ?>data-encrypted-name="number"<?php } ?> autocomplete="off" /> 
 				</div>
 			
 				<div>
@@ -654,6 +638,33 @@
 		</script>
 	<?php } ?>
 	
+	<?php					
+		if($tospage && !$pmpro_review)
+		{						
+		?>
+		<table id="pmpro_tos_fields" class="pmpro_checkout top1em" width="100%" cellpadding="0" cellspacing="0" border="0">
+		<thead>
+		<tr>
+			<th><?php echo $tospage->post_title?></th>
+		</tr>
+	</thead>
+		<tbody>
+			<tr class="odd">
+				<td>								
+					<div id="pmpro_license">
+<?php echo wpautop($tospage->post_content)?>
+					</div>								
+					<input type="checkbox" name="tos" value="1" id="tos" /> <label for="tos"><?php printf(__('I agree to the %s', 'pmpro'), $tospage->post_title);?></label>
+				</td>
+			</tr>
+		</tbody>
+		</table>
+		<?php
+		}
+	?>
+	
+	<?php do_action("pmpro_checkout_after_tos_fields"); ?>	
+	
 	<?php do_action("pmpro_checkout_before_submit_button"); ?>			
 		
 	<div class="pmpro_submit">
@@ -719,6 +730,7 @@
 <?php } ?>
 
 <script>	
+<!--
 	// Find ALL <form> tags on your page
 	jQuery('form').submit(function(){
 		// On submit disable its submit button
@@ -758,4 +770,5 @@
 		   jQuery('#other_discount_code_button').click();
 	    }
 	});
+-->
 </script>
