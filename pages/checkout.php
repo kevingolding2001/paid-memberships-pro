@@ -1,6 +1,6 @@
 <?php		
 	global $gateway, $pmpro_review, $skip_account_fields, $pmpro_paypal_token, $wpdb, $current_user, $pmpro_msg, $pmpro_msgt, $pmpro_requirebilling, $pmpro_level, $pmpro_levels, $tospage, $pmpro_currency_symbol, $pmpro_show_discount_code, $pmpro_error_fields;
-	global $discount_code, $username, $password, $password2, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth,$ExpirationYear;	
+	global $discount_code, $username, $password, $password2, $btitle, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth,$ExpirationYear;	
 	
 	$pmpro_stripe_lite = apply_filters("pmpro_stripe_lite", !pmpro_getOption("stripe_billingaddress"));	//default is oposite of the stripe_billingaddress setting
 ?>
@@ -302,6 +302,18 @@
 		<tr>
 			<td>
 				<div>
+					<label for="btitle">Title</label>
+					<select id="btitle" name="btitle" class="input" value="<?php echo esc_attr($btitle)?>" />
+						<?php 									
+							$valid_titles = array("Mr.", "Ms.", "Mrs.", "Miss", "Dr.", "Sir.", "Prof.");
+							foreach($valid_titles as $t) 
+							{ 
+						?>
+						<option value="<?php echo esc_attr($t);?>" <?php if($t == $btitle) { ?>selected="selected"<?php } ?>><?php echo $t;?></option>
+						<?php } ?>
+					</select>
+				</div>
+				<div>
 					<label for="bfirstname"><?php _e('First Name', 'pmpro');?></label>
 					<input id="bfirstname" name="bfirstname" type="text" class="input <?php echo pmpro_getClassForField("bfirstname");?>" size="30" value="<?php echo esc_attr($bfirstname)?>" /> 
 				</div>	
@@ -389,7 +401,7 @@
 				?>
 				
 				<?php
-					$show_country = apply_filters("pmpro_international_addresses", true);
+					$show_country = apply_filters("pmpro_international_addresses", false);
 					if($show_country)
 					{
 				?>
@@ -414,7 +426,7 @@
 					else
 					{
 					?>
-						<input type="hidden" name="bcountry" value="US" />
+						<input type="hidden" name="bcountry" value="AU" />
 					<?php
 					}
 				?>

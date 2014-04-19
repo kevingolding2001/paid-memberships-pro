@@ -253,12 +253,16 @@
 		$tospage = get_post($tospage);
 	
 	//load em up (other fields)
-	global $username, $password, $password2, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth, $ExpirationYear;
+	global $username, $password, $password2, $btitle, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth, $ExpirationYear;
 	
 	if(isset($_REQUEST['order_id']))
 		$order_id = $_REQUEST['order_id'];
 	else
 		$order_id = "";
+	if(isset($_REQUEST['btitle']))
+		$btitle = trim(stripslashes($_REQUEST['btitle']));	
+	else
+		$btitle = "";
 	if(isset($_REQUEST['bfirstname']))
 		$bfirstname = trim(stripslashes($_REQUEST['bfirstname']));	
 	else
@@ -395,6 +399,7 @@
 	
 	//require fields
 	$pmpro_required_billing_fields = array(
+		"btitle" => $btitle,
 		"bfirstname" => $bfirstname,
 		"blastname" => $blastname,
 		"baddress1" => $baddress1,
@@ -642,6 +647,7 @@
 						$morder->Email = $bemail;
 						
 						//sometimes we need these split up
+						$morder->Title = $btitle;
 						$morder->FirstName = $bfirstname;
 						$morder->LastName = $blastname;						
 						$morder->Address1 = $baddress1;
@@ -984,8 +990,8 @@
 				}
 			
 				//save billing info ect, as user meta																		
-				$meta_keys = array("pmpro_bfirstname", "pmpro_blastname", "pmpro_baddress1", "pmpro_baddress2", "pmpro_bcity", "pmpro_bstate", "pmpro_bzipcode", "pmpro_bcountry", "pmpro_bphone", "pmpro_bemail", "pmpro_CardType", "pmpro_AccountNumber", "pmpro_ExpirationMonth", "pmpro_ExpirationYear");
-				$meta_values = array($bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $CardType, hideCardNumber($AccountNumber), $ExpirationMonth, $ExpirationYear);						
+				$meta_keys = array("pmpro_title", "pmpro_bfirstname", "pmpro_blastname", "pmpro_baddress1", "pmpro_baddress2", "pmpro_bcity", "pmpro_bstate", "pmpro_bzipcode", "pmpro_bcountry", "pmpro_bphone", "pmpro_bemail", "pmpro_CardType", "pmpro_AccountNumber", "pmpro_ExpirationMonth", "pmpro_ExpirationYear");
+				$meta_values = array($btitle, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $CardType, hideCardNumber($AccountNumber), $ExpirationMonth, $ExpirationYear);						
 				pmpro_replaceUserMeta($user_id, $meta_keys, $meta_values);	
 				
 				//save first and last name fields
@@ -1070,6 +1076,7 @@
 		//default values from DB
 		if(!empty($current_user->ID))
 		{
+			$btitle = get_user_meta($current_user->ID, "pmpro_btitle", true);
 			$bfirstname = get_user_meta($current_user->ID, "pmpro_bfirstname", true);
 			$blastname = get_user_meta($current_user->ID, "pmpro_blastname", true);
 			$baddress1 = get_user_meta($current_user->ID, "pmpro_baddress1", true);

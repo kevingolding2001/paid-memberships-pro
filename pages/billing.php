@@ -1,6 +1,6 @@
 <?php 				
 	global $wpdb, $current_user, $pmpro_msg, $pmpro_msgt, $pmpro_currency_symbol, $show_paypal_link;
-	global $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth, $ExpirationYear;
+	global $btitle, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth, $ExpirationYear;
 	
 	$gateway = pmpro_getOption("gateway");
 	
@@ -65,6 +65,19 @@
 			<tbody>
 				<tr>
 					<td>
+						<div>
+							<label for="btitle">Title</label>
+							<select id="btitle" name="btitle" class="input" value="<?php echo esc_attr($btitle)?>" />
+							<?php                                                                   
+							$valid_titles = array("Mr.", "Ms.", "Mrs.", "Miss", "Dr.", "Sir.", "Prof.");
+							foreach($valid_titles as $t) 
+							{ 
+							?>
+							<option value="<?php echo esc_attr($t);?>" <?php if($t == $btitle) { ?>selected="selected"<?php } ?>><?php echo $t;?></option>
+							<?php } ?>
+							</select>
+
+						</div>
 						<div>
 							<label for="bfirstname"><?php _e('First Name', 'pmpro');?></label>
 							<input id="bfirstname" name="bfirstname" type="text" class="input" size="20" value="<?php echo esc_attr($bfirstname);?>" /> 
@@ -178,7 +191,7 @@
 							else
 							{
 							?>
-								<input type="hidden" id="bcountry" name="bcountry" value="US" />
+								<input type="hidden" id="bcountry" name="bcountry" value="AU" />
 							<?php
 							}
 						?>

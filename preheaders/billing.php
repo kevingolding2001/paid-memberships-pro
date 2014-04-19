@@ -1,6 +1,6 @@
 <?php	
 	global $wpdb, $current_user, $pmpro_msg, $pmpro_msgt;
-	global $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth, $ExpirationYear;
+	global $btitle, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bcountry, $bphone, $bemail, $bconfirmemail, $CardType, $AccountNumber, $ExpirationMonth, $ExpirationYear;
 	
 	$gateway = pmpro_getOption("gateway");
 	
@@ -146,6 +146,8 @@
 	if($submit)
 	{		
 		//load em up (other fields)	
+		if(isset($_REQUEST['btitle']))
+			$btitle = trim(stripslashes($_REQUEST['btitle']));	
 		if(isset($_REQUEST['bfirstname']))
 			$bfirstname = trim(stripslashes($_REQUEST['bfirstname']));	
 		if(isset($_REQUEST['blastname']))
@@ -226,6 +228,7 @@
 			$CVV = "";		
 		
 		$pmpro_required_billing_fields = array(
+			"btitle" => $btitle,
 			"bfirstname" => $bfirstname,
 			"blastname" => $blastname,
 			"baddress1" => $baddress1,
@@ -325,6 +328,7 @@
 				$morder->Email = $bemail;
 				
 				//sometimes we need these split up
+				$morder->Title = $btitle;
 				$morder->FirstName = $bfirstname;
 				$morder->LastName = $blastname;						
 				$morder->Address1 = $baddress1;
@@ -362,8 +366,8 @@
 			if($worked)
 			{
 				//update the user meta too
-				$meta_keys = array("pmpro_bfirstname", "pmpro_blastname", "pmpro_baddress1", "pmpro_baddress2", "pmpro_bcity", "pmpro_bstate", "pmpro_bzipcode", "pmpro_bphone", "pmpro_bemail", "pmpro_CardType", "pmpro_AccountNumber", "pmpro_ExpirationMonth", "pmpro_ExpirationYear");
-				$meta_values = array($bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bphone, $bemail, $CardType, hideCardNumber($AccountNumber), $ExpirationMonth, $ExpirationYear);						
+				$meta_keys = array("pmpro_title", "pmpro_bfirstname", "pmpro_blastname", "pmpro_baddress1", "pmpro_baddress2", "pmpro_bcity", "pmpro_bstate", "pmpro_bzipcode", "pmpro_bphone", "pmpro_bemail", "pmpro_CardType", "pmpro_AccountNumber", "pmpro_ExpirationMonth", "pmpro_ExpirationYear");
+				$meta_values = array($btitle, $bfirstname, $blastname, $baddress1, $baddress2, $bcity, $bstate, $bzipcode, $bphone, $bemail, $CardType, hideCardNumber($AccountNumber), $ExpirationMonth, $ExpirationYear);						
 				pmpro_replaceUserMeta($current_user->ID, $meta_keys, $meta_values);
 				
 				//message
@@ -383,6 +387,7 @@
 	else
 	{
 		//default values from DB
+		$btitle = get_user_meta($current_user->ID, "pmpro_title", true);		
 		$bfirstname = get_user_meta($current_user->ID, "pmpro_bfirstname", true);		
 		$blastname = get_user_meta($current_user->ID, "pmpro_blastname", true);
 		$baddress1 = get_user_meta($current_user->ID, "pmpro_baddress1", true);
