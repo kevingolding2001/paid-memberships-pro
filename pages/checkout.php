@@ -38,21 +38,14 @@
 		<tr>
 			<td>				
 				<p>
-					<?php printf(__('You have selected the <strong>%s</strong> membership level.', 'pmpro'), $pmpro_level->name);?>
+					<?php printf(__('Great, you\'ve selected the %s plan, at $%d per month (including GST).', 'pmpro'), $pmpro_level->name, $pmpro_level->initial_payment);?>
 				</p>
-				
-				<?php
-					if(!empty($pmpro_level->description))
-						echo apply_filters("the_content", stripslashes($pmpro_level->description));
-				?>
-				
-				<div id="pmpro_level_cost">
-					<?php if($discount_code && pmpro_checkDiscountCode($discount_code)) { ?>
-						<?php printf(__('<p class="pmpro_level_discount_applied">The <strong>%s</strong> code has been applied to your order.</p>', 'pmpro'), $discount_code);?>
-					<?php } ?>
-					<?php echo wpautop(pmpro_getLevelCost($pmpro_level)); ?>
-					<?php echo wpautop(pmpro_getLevelExpiration($pmpro_level)); ?>
-				</div>
+				<p>
+				This subscription will auto-renew each month. There's no contract and you can cancel at any time.
+				</p>
+				<p>
+				Please enter your details below to complete the sign-up process and get instant access to our experts:
+				</p>
 				
 				<?php do_action("pmpro_checkout_after_level_cost"); ?>				
 				
@@ -167,6 +160,7 @@
 	<tbody>                
 		<tr>
 			<td>
+				<div><label><h4>Login details</h4></label></div>
 				<div>
 					<label for="username"><?php _e('Username', 'pmpro');?></label>
 					<input id="username" name="username" type="text" class="input <?php echo pmpro_getClassForField("username");?>" size="30" value="<?php echo esc_attr($username)?>" /> 
@@ -301,6 +295,7 @@
 	<tbody>
 		<tr>
 			<td>
+				<div><label><h4>Your details</h4></label></div>
 				<div>
 					<label for="btitle">Title</label>
 					<select id="btitle" name="btitle" class="input" value="<?php echo esc_attr($btitle)?>" />
@@ -491,6 +486,7 @@
 	<tbody>                    
 		<tr valign="top">		
 			<td>	
+					<div><label><h4>Payment details</h4></label></div>
 				<?php
 					$sslseal = pmpro_getOption("sslseal");
 					if($sslseal)
@@ -661,6 +657,9 @@
 		</tr>
 	</thead>
 		<tbody>
+					<tr><td>
+					<div><label><h4>Terms and conditions</h4></label></div>
+					</td></tr>
 			<tr class="odd">
 				<td>								
 					<div id="pmpro_license">
@@ -686,7 +685,7 @@
 				<input type="hidden" name="confirm" value="1" />
 				<input type="hidden" name="token" value="<?php echo esc_attr($pmpro_paypal_token)?>" />
 				<input type="hidden" name="gateway" value="<?php echo esc_attr($gateway); ?>" />
-				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="<?php _e('Complete Payment', 'pmpro');?> &raquo;" />
+				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="Subscribe & get access now" />
 			</span>
 				
 		<?php } else { ?>
@@ -700,7 +699,7 @@
 			
 			<span id="pmpro_submit_span" <?php if(($gateway == "paypalexpress" || $gateway == "paypalstandard") && $pmpro_requirebilling) { ?>style="display: none;"<?php } ?>>
 				<input type="hidden" name="submit-checkout" value="1" />		
-				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="<?php if($pmpro_requirebilling) { if($gateway == "twocheckout") { _e('Submit and Pay with 2CheckOut', 'pmpro'); } else { _e('Submit and Check Out', 'pmpro'); } } else { _e('Submit and Confirm', 'pmpro');}?> &raquo;" />				
+				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="<?php if($pmpro_requirebilling) { if($gateway == "twocheckout") { _e('Submit and Pay with 2CheckOut', 'pmpro'); } else { _e('Subscribe & get access now', 'pmpro'); } } else { _e('Submit and Confirm', 'pmpro');}?> &raquo;" />				
 			</span>
 		<?php } ?>
 		
